@@ -1,0 +1,44 @@
+---
+## /* vim: set tabstop=2 softtabstop=2 shiftwidth=2 expandtab smarttab autoindent: */
+
+- name: "Make sure the SSH key path exists"
+  ansible.builtin.file:
+    path: "{{ borgbase_key_path }}"
+    state: "directory"
+    owner: "root"
+    group: "root"
+    mode: "u=rwx,go="
+
+- name: "Copy the given key"
+  ansible.builtin.copy:
+    src: "{{ item.source }}"
+    dest: "{{ item.dest }}"
+    owner: "root"
+    group: "root"
+    mode: "{{ item.mode }}"
+  loop:
+  - name: "private key"
+    source: "{{ borgbase_private_key }}"
+    dest: "{{ borgbase_key_path }}/{{ borgbase_key_name }}"
+    mode: "u=rw,go="
+  - name: "public key"
+    source: "{{ borgbase_public_key }}"
+    dest: "{{ borgbase_key_path }}/{{ borgbase_key_name }}.pub"
+    mode: "u=rw,go=r"
+  loop_control:
+    label: "{{ item.name }}"
+  when:
+  - "borgbase_private_key is defined"
+  - "borgbase_public_key is defined"
+
+- name: "Generate the SSH keypair for BorgBase"
+  community.crypto.openssh_keypair:
+    path: "{{ borgbase_key_path }}/{{ borgbase_key_name }}"
+    comment: "{{ borgbase_key_comment }}"
+    type: "{{ borgbase_key_type }}"
+    size: "{{ borgbase_key_size }}"
+    regenerate: "partial_idempotence"
+    owner: "root"
+    group: "root"
+    state: "present"
+  register: "borgbase_ssh_keypair"

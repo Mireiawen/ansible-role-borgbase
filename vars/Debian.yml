@@ -1,0 +1,4 @@
+---
+## /* vim: set tabstop=2 softtabstop=2 shiftwidth=2 expandtab smarttab autoindent: */
+
+__borgbackup_apt_backport: "{{ true if (ansible_distribution_major_version | int < 12) else false }}"

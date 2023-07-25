@@ -1,0 +1,41 @@
+---
+## /* vim: set tabstop=2 softtabstop=2 shiftwidth=2 expandtab smarttab autoindent: */
+- name: "Include OS-specific variables"
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+  - files:
+    - "{{ ansible_os_family }}.yml"
+    - "default.yml"
+
+- name: "Include distribution -specific variables"
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+  - files:
+    - "{{ ansible_distribution }}.yml"
+    skip: true
+
+- name: "Include distribution and version -specific varsiables"
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+  - files:
+    - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+    skip: true
+
+- name: "Install the packages"
+  ansible.builtin.include_tasks: "packages.yml"
+
+- name: "Get the SSH keypair for BorgBase"
+  ansible.builtin.include_tasks: "keypair.yml"
+
+- name: "Get the repository passphrase for BorgBase"
+  ansible.builtin.include_tasks: "passphrase.yml"
+
+- name: "Initialize the repository"
+  ansible.builtin.include_tasks: "repository.yml"
+  when:
+  - "borgbase_api_key is defined"
+
+- name: "Configure the backups"
+  ansible.builtin.include_tasks: "configure.yml"
+  when:
+  - "borgbase_repository_fullpath is defined"

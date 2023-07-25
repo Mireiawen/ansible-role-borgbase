@@ -1,0 +1,114 @@
+---
+## /* vim: set tabstop=2 softtabstop=2 shiftwidth=2 expandtab smarttab autoindent: */
+
+- name: "Check for the SSH key"
+  delegate_to: "localhost"
+  adhawkins.borgbase.borgbase_ssh:
+    name: "{{ borgbase_ssh_keypair.comment }}"
+    key: "{{ borgbase_ssh_keypair.public_key }}"
+    apikey: "{{ borgbase_api_key }}"
+    state: "present"
+  register: "borgbase_ssh_key"
+
+- name: "Check for the Borgbase repository"
+  delegate_to: "localhost"
+  check_mode: true
+  adhawkins.borgbase.borgbase_repo:
+    name: "{{ borgbase_repo_name }}"
+    region: "{{ borgbase_repo_region }}"
+    full_access_keys: []
+    append_only_keys: [ "{{ borgbase_sshkey_id }}" ]
+    append_only: true
+    quota_enabled: "{{ true if (borgbase_repo_quota | int > 0) else false }}"
+    quota: "{{ borgbase_repo_quota }}"
+    alert_days: "{{ borgbase_repo_monitoring_interval }}"
+    apikey: "{{ borgbase_api_key }}"
+    state: "present"
+  register: "borgbase_repository_check"
+
+- name: "Create the Borgbase repository"
+  delegate_to: "localhost"
+  adhawkins.borgbase.borgbase_repo:
+    name: "{{ borgbase_repo_name }}"
+    region: "{{ borgbase_repo_region }}"
+    full_access_keys: [ "{{ borgbase_sshkey_id }}" ]
+    append_only_keys: []
+    append_mode: false
+    quota_enabled: "{{ true if (borgbase_repo_quota | int > 0) else false }}"
+    quota: "{{ borgbase_repo_quota }}"
+    alert_days: "{{ borgbase_repo_monitoring_interval }}"
+    apikey: "{{ borgbase_api_key }}"
+    state: "present"
+  register: "borgbase_repository"
+  when:
+  - "borgbase_repository_check.repo_id is not defined"
+
+- name: "Set the repository ID from check"
+  ansible.builtin.set_fact:
+    borgbase_repository_id: "{{ borgbase_repository_check.repo_id }}"
+  when:
+  - "borgbase_repository_check.repo_id is defined"
+
+- name: "Set the repository ID from repository creation"
+  ansible.builtin.set_fact:
+    borgbase_repository_id: "{{ borgbase_repository.repo_id }}"
+  when:
+  - "borgbase_repository_check.repo_id is not defined"
+
+- name: "Set the repository variables"
+  ansible.builtin.set_fact:
+    borgbase_repository_hostname: "{{ borgbase_repository_id }}.repo.borgbase.com"
+    borgbase_repository_fullpath: "ssh://{{ borgbase_repository_id }}@{{ borgbase_repository_hostname }}/./repo"
+
+- name: "Install the SSH configuration for Borgbase backup repository"
+  ansible.builtin.template:
+    src: "ssh_config.borgbase.j2"
+    dest: "/root/.ssh/config.d/borgbase"
+    owner: "root"
+    group: "root"
+    mode: "u=rw,go="
+
+- name: "Prepare the repository"
+  when:
+  - "borgbase_repository_check.repo_id is not defined"
+
+  block:
+  - name: "Initialize the repository"
+    ansible.builtin.shell:
+      cmd: >
+        borg 'init'
+        --make-parent-dirs
+        --encryption='repokey-blake2'
+        '{{ borgbase_repo_full }}'
+    environment:
+      BORG_PASSPHRASE: "{{ borgbase_passphrase }}"
+    args:
+      executable: "/bin/bash"
+    when:
+    - "borgbase_repository_check.repo_id is not defined"
+
+  - name: "Export the key so it can be copied to safety"
+    ansible.builtin.shell:
+      cmd: >
+        borg 'key' 'export'
+        '{{ borgbase_repo_full }}'
+        '/root/borgbase_key'
+    args:
+      executable: "/bin/bash"
+    when:
+    - "borgbase_repository_check.repo_id is not defined"
+
+  - name: "Change the repository to append mode"
+    delegate_to: "localhost"
+    adhawkins.borgbase.borgbase_repo:
+      name: "{{ borgbase_repo_name }}"
+      region: "{{ borgbase_repo_region }}"
+      full_keys: "{{ borgbase_sshkey_id }}"
+      full_access_keys: []
+      append_only_keys: [ "{{ borgbase_sshkey_id }}" ]
+      append_only: true
+      quota_enabled: "{{ true if (borgbase_repo_quota | int > 0) else false }}"
+      quota: "{{ borgbase_repo_quota }}"
+      alert_days: "{{ borgbase_repo_monitoring_interval }}"
+      apikey: "{{ borgbase_api_key }}"
+      state: "present"

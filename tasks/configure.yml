@@ -1,0 +1,26 @@
+---
+## /* vim: set tabstop=2 softtabstop=2 shiftwidth=2 expandtab smarttab autoindent: */
+
+- name: "Make sure Borgmatic configuration folder exists"
+  ansible.builtin.file:
+    path: "/etc/borgmatic"
+    state: "directory"
+    mode: "u=rwx,go="
+    owner: "root"
+    group: "root"
+
+- name: "Install the Borgmatic configuration"
+  ansible.builtin.template:
+    src: "config.yaml.j2"
+    dest: "/etc/borgmatic/config.yaml"
+    mode: "u=rw,go="
+    owner: "root"
+    group: "root"
+
+- name: "Create the cron job"
+  ansible.builtin.cron:
+    name: "BorgBase backups"
+    minute: "{{ borgbase_job_minute }}"
+    hour: "{{ borgbase_job_hour }}"
+    weekday: "{{ borgbase_job_weekday }}"
+    job: "/usr/local/bin/silence-unless-failed -f '/var/log/backup-last.log' '/usr/local/bin/borgmatic'"

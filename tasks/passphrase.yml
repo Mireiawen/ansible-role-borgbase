@@ -1,0 +1,34 @@
+---
+## /* vim: set tabstop=2 softtabstop=2 shiftwidth=2 expandtab smarttab autoindent: */
+
+- name: "Copy the passphrase file"
+  ansible.builtin.copy:
+    content: "{{ borgbase_repo_passphrase }}"
+    dest: "{{ borgbase_repo_passphrase_file }}"
+    owner: "root"
+    group: "root"
+    mode: "u=r,go="
+  when:
+  - "borgbase_repo_passphrase is defined"
+
+- name: "Generate the passphrase"
+  ansible.builtin.shell: "pwgen '22' '1' >'{{ borgbase_repo_passphrase_file }}'"
+  args:
+    creates: "{{ borgbase_repo_passphrase_file }}"
+    executable: "/bin/bash"
+
+- name: "Set the permissions"
+  ansible.builtin.file:
+    path: "{{ borgbase_repo_passphrase_file }}"
+    owner: "root"
+    group: "root"
+    mode: "u=r,go="
+
+- name: "Get the passphrase into variable"
+  ansible.builtin.command: "cat '{{ borgbase_repo_passphrase_file }}'"
+  register: "borgbase_passphrase_contents"
+  changed_when: false
+
+- name: "Set the passphrase fact"
+  ansible.builtin.set_fact:
+    borgbase_passphrase: "{{ borgbase_passphrase_contents.stdout }}"

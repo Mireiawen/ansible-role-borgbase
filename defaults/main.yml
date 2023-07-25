@@ -1,0 +1,24 @@
+---
+## /* vim: set tabstop=2 softtabstop=2 shiftwidth=2 expandtab smarttab autoindent: */
+
+borgbackup_package: 'borgbackup'
+borgbackup_package_state: 'present'
+
+borgmatic_package: 'borgmatic'
+borgmatic_package_state: 'present'
+
+borgbase_key_type: 'ed25519'
+borgbase_key_size: '384'
+borgbase_key_name: 'id_{{ borgbase_key_type }}-borgbase'
+borgbase_key_comment: 'Borgbase {{ system_name | default(inventory_hostname) }}'
+borgbase_key_path: '/root/.ssh'
+
+borgbase_repo_name: 'Borgbase {{ system_name | default(inventory_hostname) }}'
+borgbase_repo_passphrase_file: '/root/borgbase_passphrase'
+borgbase_repo_region: 'eu'
+borgbase_repo_quota: '0'
+borgbase_repo_monitoring_interval: '1'
+
+borgbase_job_minute: '5'
+borgbase_job_hour: '3'
+borgbase_job_weekday: '*'
