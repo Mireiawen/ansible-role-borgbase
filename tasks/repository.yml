@@ -10,9 +10,14 @@
     state: "present"
   register: "borgbase_ssh_key"
 
+- name: "Set the SSH key ID"
+  ansible.builtin.set_fact:
+    borgbase_sshkey_id: "{{ borgbase_ssh_key.key_id }}"
+
 - name: "Check for the Borgbase repository"
   delegate_to: "localhost"
   check_mode: true
+  changed_when: false
   adhawkins.borgbase.borgbase_repo:
     name: "{{ borgbase_repo_name }}"
     region: "{{ borgbase_repo_region }}"
@@ -55,9 +60,12 @@
   when:
   - "borgbase_repository_check.repo_id is not defined"
 
-- name: "Set the repository variables"
+- name: "Set the repository hostname"
   ansible.builtin.set_fact:
     borgbase_repository_hostname: "{{ borgbase_repository_id }}.repo.borgbase.com"
+
+- name: "Set the repository full path"
+  ansible.builtin.set_fact:
     borgbase_repository_fullpath: "ssh://{{ borgbase_repository_id }}@{{ borgbase_repository_hostname }}/./repo"
 
 - name: "Install the SSH configuration for Borgbase backup repository"
