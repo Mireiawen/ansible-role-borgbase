@@ -1,53 +1,48 @@
 ---
 ## /* vim: set ft=yaml tabstop=2 softtabstop=2 shiftwidth=2 expandtab smarttab autoindent: */
 
-location:
-  source_directories:
-  - '/etc'
-  - '/root'
+source_directories:
+- '/etc'
+- '/root'
 {% if 'docker' in group_names %}
-  - '/var/lib/docker/volumes'
+- '/var/lib/docker/volumes'
 {% endif %}
 {% if borg_directories is defined %}{% for dir in borg_directories %}
-  - '{{ dir }}'
+- '{{ dir }}'
 {% endfor %}{% endif %}
 
-  one_file_system: true
-  repositories:
-  - '{{ borgbase_repository_fullpath }}'
+repositories:
+- path: '{{ borgbase_repository_fullpath }}'
+  label: 'borgbase'
 
-  exclude_patterns:
-  - '*.pyc'
-  - '~/*/.cache'
+one_file_system: true
 
-  exclude_caches: true
-  exclude_if_present: '.nobackup'
+numeric_ids: true
+atime: true
+ctime: true
+birthtime: true
+flags: true
 
-storage:
-  compression: 'auto,zstd'
-  encryption_passphrase: '{{ borgbase_passphrase }}'
-  archive_name_format: '{hostname}-{now}'
+exclude_patterns:
+- '*.pyc'
+- '~/*/.cache'
 
-retention:
-  keep_daily: 3
-  keep_weekly: 4
-  keep_monthly: 12
-  keep_yearly: 2
-  prefix: '{hostname}-'
+exclude_caches: true
+exclude_if_present:
+- '.nobackup'
 
-consistency:
-  checks:
-  # uncomment to always do integrity checks. (takes long time for large repos)
-  #- 'repository'
-  - 'disabled'
+compression: 'auto,zstd'
+encryption_passphrase: '{{ borgbase_passphrase }}'
+archive_name_format: '{hostname}-{now}'
 
-  check_last: 3
-  prefix: '{hostname}-'
+keep_daily: 3
+keep_weekly: 4
+keep_monthly: 12
+keep_yearly: 2
 
 {% if borg_before_hooks is defined %}
-hooks:
-  # List of one or more shell commands or scripts to execute before creating a backup.
-  before_backup:
+# List of one or more shell commands or scripts to execute before creating a backup.
+before_backup:
 {% for hook in borg_before_hooks %}
-  - '{{ hook }}'
+- '{{ hook }}'
 {% endfor %}{% endif %}
