@@ -111,7 +111,6 @@
     adhawkins.borgbase.borgbase_repo:
       name: "{{ borgbase_repo_name }}"
       region: "{{ borgbase_repo_region }}"
-      full_keys: "{{ borgbase_sshkey_id }}"
       full_access_keys: []
       append_only_keys: [ "{{ borgbase_sshkey_id }}" ]
       append_only: true
@@ -120,3 +119,19 @@
       alert_days: "{{ borgbase_repo_monitoring_interval }}"
       apikey: "{{ borgbase_api_key }}"
       state: "present"
+
+- name: "Update the repository"
+  delegate_to: "localhost"
+  adhawkins.borgbase.borgbase_repo:
+    name: "{{ borgbase_repo_name }}"
+    region: "{{ borgbase_repo_region }}"
+    full_access_keys: []
+    append_only_keys: [ "{{ borgbase_sshkey_id }}" ]
+    append_only: true
+    quota_enabled: "{{ true if (borgbase_repo_quota | int > 0) else false }}"
+    quota: "{{ borgbase_repo_quota }}"
+    alert_days: "{{ borgbase_repo_monitoring_interval }}"
+    apikey: "{{ borgbase_api_key }}"
+    state: "present"
+  when:
+  - "borgbase_managed | default(true)"
