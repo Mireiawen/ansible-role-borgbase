@@ -38,7 +38,7 @@
     region: "{{ borgbase_repo_region }}"
     full_access_keys: [ "{{ borgbase_sshkey_id }}" ]
     append_only_keys: []
-    append_mode: false
+    append_only: false
     quota_enabled: "{{ true if (borgbase_repo_quota | int > 0) else false }}"
     quota: "{{ borgbase_repo_quota }}"
     alert_days: "{{ borgbase_repo_monitoring_interval }}"
