@@ -87,7 +87,7 @@
         borg 'init'
         --make-parent-dirs
         --encryption='repokey-blake2'
-        '{{ borgbase_repo_full }}'
+        '{{ borgbase_repo_fullpath }}'
     environment:
       BORG_PASSPHRASE: "{{ borgbase_passphrase }}"
     args:
@@ -99,7 +99,7 @@
     ansible.builtin.shell:
       cmd: >
         borg 'key' 'export'
-        '{{ borgbase_repo_full }}'
+        '{{ borgbase_repo_fullpath }}'
         '/root/borgbase_key'
     args:
       executable: "/bin/bash"
